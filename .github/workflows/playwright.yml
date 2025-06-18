@@ -55,15 +55,22 @@ jobs:
           ls -la
           echo "Looking for Dockerfile:"
           find . -name "Dockerfile" -type f
+          echo "Looking for package.json files:"
+          find . -name "package.json" -type f
+          echo "Looking for src directories:"
+          find . -name "src" -type d
+          echo "Looking for tsconfig files:"
+          find . -name "tsconfig*.json" -type f
 
       # 1️⃣ Build the API image (corrected path)
       - name: Build todo-api image
         run: |
-          # Option 1: If Dockerfile is in root
-          docker build -t todo-api:ci .
+          # First, let's see what's in the directory where Dockerfile expects files
+          echo "Checking current directory for expected files:"
+          ls -la
           
-          # Option 2: If Dockerfile is in a subdirectory, use:
-          # docker build -t todo-api:ci ./path/to/dockerfile/directory
+          # Build with current directory as context
+          docker build -t todo-api:ci .
 
       # 2️⃣ Start it detached on known port
       - name: Run todo-api container
