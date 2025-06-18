@@ -62,22 +62,22 @@ jobs:
       - name: Wait for health-check
         run: |
           for i in {1..30}; do
-            if curl -sf http://localhost:3000/todos/1 > /dev/null; then
+            if curl -sf http://localhost:3000/todos/1 >/dev/null; then
               echo "API healthy ✅"; exit 0
             fi
-            echo "Waiting ($i)..."; sleep 1
+            echo "Waiting ($i)…"; sleep 1
           done
-          echo "API failed health-check ❌"; docker logs todo-api; exit 1
+          echo "API failed health-check ❌"
+          docker logs todo-api
+          exit 1
 
-      # 👉 install k6 binary via apt (small)
-      - name: Install k6
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y k6
-
+      # ── k6 via Docker on the host network ──
       - name: Run k6 performance smoke
-        run: k6 run perf/smoke.js
+        run: |
+          docker run --rm -i --network host \
+            -v ${{ github.workspace }}/perf:/scripts \
+            grafana/k6 run /scripts/smoke.js
 
       - name: Stop container
         if: always()
-        run: docker stop todo-api
+        run: docker stop todo-api || true
