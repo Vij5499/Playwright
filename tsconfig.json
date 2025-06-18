@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["es2020"],
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "typeRoots": ["./types", "./node_modules/@types"],
+
+    /* Jest + Node types */
+    "types": ["jest", "node"]
+  },
+
+  "include": [
+    "tests/**/*.ts",
+    "page_objects/**/*.ts",
+    "playwright.config.ts"
+  ]
+}
