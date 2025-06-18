@@ -38,6 +38,7 @@ jobs:
           name: report-${{ env.PW_BROWSER }}
           path: playwright-report
           retention-days: 30
+
   perf-smoke:
     needs: test
     runs-on: ubuntu-latest
@@ -45,10 +46,24 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # 1️⃣ Build the API image
-      - name: Build todo-api image
-        run: docker build -t todo-api:ci Playwright/Playwright-1/Playwright
+      # Debug: List directory structure
+      - name: Debug - List directory structure
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Directory contents:"
+          ls -la
+          echo "Looking for Dockerfile:"
+          find . -name "Dockerfile" -type f
 
+      # 1️⃣ Build the API image (corrected path)
+      - name: Build todo-api image
+        run: |
+          # Option 1: If Dockerfile is in root
+          docker build -t todo-api:ci .
+          
+          # Option 2: If Dockerfile is in a subdirectory, use:
+          # docker build -t todo-api:ci ./path/to/dockerfile/directory
 
       # 2️⃣ Start it detached on known port
       - name: Run todo-api container
@@ -63,13 +78,18 @@ jobs:
             fi
             echo "Waiting ($i)..."; sleep 1
           done
-          echo "API failed health-check ❌"; docker logs todo-api; exit 1
+          echo "API failed health-check ❌"
+          echo "Container logs:"
+          docker logs todo-api
+          exit 1
 
       # 4️⃣ Run k6 smoke (runner already has k6)
       - name: Run k6 performance smoke
         run: k6 run perf/smoke.js
 
       # 5️⃣ Always clean up
-      - name: Stop container
+      - name: Stop and remove container
         if: always()
-        run: docker stop todo-api
+        run: |
+          docker stop todo-api || true
+          docker rm todo-api || true
