@@ -47,7 +47,8 @@ jobs:
 
       # 1️⃣ Build the API image
       - name: Build todo-api image
-        run: docker build -t todo-api:ci .
+        run: docker build -t todo-api:ci Playwright/Playwright-1/Playwright
+
 
       # 2️⃣ Start it detached on known port
       - name: Run todo-api container
