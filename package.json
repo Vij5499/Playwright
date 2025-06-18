@@ -2,7 +2,13 @@
   "name": "playwright",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "build:api": "tsc -p tsconfig.build.json",
+    "start:api": "node dist/server.js",
+    "test": "playwright test",
+    "test:contract": "jest --runInBand",
+    "perf": "k6 run perf/smoke.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Vij5499/Playwright.git"
@@ -16,7 +22,20 @@
   "homepage": "https://github.com/Vij5499/Playwright#readme",
   "description": "",
   "devDependencies": {
+    "@pact-foundation/pact": "^11.0.2",
     "@playwright/test": "^1.53.0",
-    "@types/node": "^24.0.3"
+    "@types/express": "^5.0.3",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^24.0.3",
+    "@types/node-fetch": "^2.6.12",
+    "jest": "^29.7.0",
+    "k6": "^0.0.0",
+    "node-fetch": "^2.7.0",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
   }
 }
