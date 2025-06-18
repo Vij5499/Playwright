@@ -42,23 +42,33 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
 
-    # ---- service container ----
-    services:
-      todo-api:
-        image: todo-api:ci              # ← pointing to the tag we’ll build
-        ports:
-          - 3000:3000
-        options: >-
-          --health-cmd="curl -f http://localhost:3000/todos/1 || exit 1"
-          --health-interval=10s --health-retries=5
-
     steps:
       - uses: actions/checkout@v3
 
-      # 1️⃣ Build the API image *inside this job*
+      # 1️⃣ Build the API image
       - name: Build todo-api image
         run: docker build -t todo-api:ci .
 
-      # 2️⃣ Run k6 (k6 is pre-installed on Ubuntu runners)
+      # 2️⃣ Start it detached on known port
+      - name: Run todo-api container
+        run: docker run -d --name todo-api -p 3000:3000 todo-api:ci
+
+      # 3️⃣ Wait until /todos/1 returns 200 (max 30 s)
+      - name: Wait for health-check
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost:3000/todos/1 > /dev/null; then
+              echo "API healthy ✅"; exit 0
+            fi
+            echo "Waiting ($i)..."; sleep 1
+          done
+          echo "API failed health-check ❌"; docker logs todo-api; exit 1
+
+      # 4️⃣ Run k6 smoke (runner already has k6)
       - name: Run k6 performance smoke
         run: k6 run perf/smoke.js
+
+      # 5️⃣ Always clean up
+      - name: Stop container
+        if: always()
+        run: docker stop todo-api
