@@ -7,13 +7,16 @@ on:
     branches: [ "main" ]
 
 jobs:
+# ──────────────────────────────────────────────────────────────
+# 1) Browser matrix (Chromium / Firefox / WebKit)
+# ──────────────────────────────────────────────────────────────
   test:
     strategy:
       matrix:
-        browser: [ chromium, firefox, webkit ]   # 3 parallel jobs
+        browser: [ chromium, firefox, webkit ]
     runs-on: ubuntu-latest
     env:
-      PW_BROWSER: ${{ matrix.browser }}          # pass to Playwright
+      PW_BROWSER: ${{ matrix.browser }}
 
     steps:
       - uses: actions/checkout@v3
@@ -39,6 +42,10 @@ jobs:
           path: playwright-report
           retention-days: 30
 
+# ──────────────────────────────────────────────────────────────
+# 2) Performance smoke (k6)
+#    - builds image → starts container → health-check → k6 run
+# ──────────────────────────────────────────────────────────────
   perf-smoke:
     needs: test
     runs-on: ubuntu-latest
@@ -46,57 +53,32 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Debug: List directory structure
-      - name: Debug - List directory structure
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "Directory contents:"
-          ls -la
-          echo "Looking for Dockerfile:"
-          find . -name "Dockerfile" -type f
-          echo "Looking for package.json files:"
-          find . -name "package.json" -type f
-          echo "Looking for src directories:"
-          find . -name "src" -type d
-          echo "Looking for tsconfig files:"
-          find . -name "tsconfig*.json" -type f
-
-      # 1️⃣ Build the API image (corrected path)
+      # Build the API image from repo root (where Dockerfile lives)
       - name: Build todo-api image
-        run: |
-          # First, let's see what's in the directory where Dockerfile expects files
-          echo "Checking current directory for expected files:"
-          ls -la
-          
-          # Build with current directory as context
-          docker build -t todo-api:ci .
+        run: docker build -t todo-api:ci .
 
-      # 2️⃣ Start it detached on known port
       - name: Run todo-api container
         run: docker run -d --name todo-api -p 3000:3000 todo-api:ci
 
-      # 3️⃣ Wait until /todos/1 returns 200 (max 30 s)
       - name: Wait for health-check
         run: |
           for i in {1..30}; do
             if curl -sf http://localhost:3000/todos/1 > /dev/null; then
               echo "API healthy ✅"; exit 0
             fi
-            echo "Waiting ($i)..."; sleep 1
+            echo "Waiting ($i)…"; sleep 1
           done
           echo "API failed health-check ❌"
-          echo "Container logs:"
           docker logs todo-api
           exit 1
 
-      # 4️⃣ Run k6 smoke (runner already has k6)
+      # Run k6 via the official action (downloads binary for you)
       - name: Run k6 performance smoke
-        run: k6 run perf/smoke.js
+        uses: grafana/k6-action@v0.3.1
+        with:
+          filename: perf/smoke.js        # path inside repo
 
-      # 5️⃣ Always clean up
-      - name: Stop and remove container
+      # Always clean up the container
+      - name: Stop container
         if: always()
-        run: |
-          docker stop todo-api || true
-          docker rm todo-api || true
+        run: docker stop todo-api
