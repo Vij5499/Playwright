@@ -38,3 +38,27 @@ jobs:
           name: report-${{ env.PW_BROWSER }}
           path: playwright-report
           retention-days: 30
+  perf-smoke:
+    needs: test
+    runs-on: ubuntu-latest
+
+    # ---- service container ----
+    services:
+      todo-api:
+        image: todo-api:ci              # ← pointing to the tag we’ll build
+        ports:
+          - 3000:3000
+        options: >-
+          --health-cmd="curl -f http://localhost:3000/todos/1 || exit 1"
+          --health-interval=10s --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # 1️⃣ Build the API image *inside this job*
+      - name: Build todo-api image
+        run: docker build -t todo-api:ci .
+
+      # 2️⃣ Run k6 (k6 is pre-installed on Ubuntu runners)
+      - name: Run k6 performance smoke
+        run: k6 run perf/smoke.js
