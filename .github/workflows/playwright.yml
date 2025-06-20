@@ -106,18 +106,18 @@ jobs:
           done
           echo "API failed health-check ❌"; docker logs todo-api; exit 1
 
-      # 2. Run OWASP ZAP baseline scan (Docker)
+      # 2. Run OWASP ZAP baseline scan (Docker, GHCR image)
       - name: ZAP baseline scan
         run: |
           docker run --rm --network host \
             -v ${{ github.workspace }}/zap:/zap/wrk \
-            owasp/zap2docker-stable \
-              zap-baseline.py \
+            ghcr.io/zaproxy/zap-baseline:latest \
               -t http://localhost:3000 \
               -x /zap/wrk/zap-report.xml \
               -w /zap/wrk/zap-warnings.md \
               -c /zap/wrk/baseline.conf \
               -r /zap/wrk/zap-html-report.html
+
 
 
       # 3. Upload artifacts: XML (for future SARIF) + HTML report
