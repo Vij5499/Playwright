@@ -109,15 +109,16 @@ jobs:
       # 2. Run OWASP ZAP baseline scan (Docker)
       - name: ZAP baseline scan
         run: |
-          docker run --rm \
-            --network host \
+          docker run --rm --network host \
             -v ${{ github.workspace }}/zap:/zap/wrk \
-            zaproxy/zap-baseline:stable \
+            owasp/zap2docker-stable \
+              zap-baseline.py \
               -t http://localhost:3000 \
-              -x zap-report.xml \
-              -w zap-warnings.md \
-              -c baseline.conf \
-              -r zap-html-report.html
+              -x /zap/wrk/zap-report.xml \
+              -w /zap/wrk/zap-warnings.md \
+              -c /zap/wrk/baseline.conf \
+              -r /zap/wrk/zap-html-report.html
+
 
       # 3. Upload artifacts: XML (for future SARIF) + HTML report
       - name: Upload ZAP reports
