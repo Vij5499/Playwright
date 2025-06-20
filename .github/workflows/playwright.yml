@@ -81,3 +81,57 @@ jobs:
       - name: Stop container
         if: always()
         run: docker stop todo-api || true
+  zap-baseline:
+    needs: perf-smoke            # run only after perf job passes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10          # guardrail; baseline scan is fast (<2 min)
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # 1. Build & run the API (re-use cache)
+      - name: Build todo-api image
+        run: docker build -t todo-api:ci .
+
+      - name: Run todo-api container
+        run: docker run -d --name todo-api -p 3000:3000 todo-api:ci
+
+      - name: Wait for health-check
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost:3000/todos/1 >/dev/null; then
+              echo "API healthy ✅"; exit 0
+            fi
+            echo "Waiting ($i)…"; sleep 1
+          done
+          echo "API failed health-check ❌"; docker logs todo-api; exit 1
+
+      # 2. Run OWASP ZAP baseline scan (Docker)
+      - name: ZAP baseline scan
+        run: |
+          docker run --rm \
+            --network host \
+            -v ${{ github.workspace }}/zap:/zap/wrk \
+            zaproxy/zap-baseline:stable \
+              -t http://localhost:3000 \
+              -x zap-report.xml \
+              -w zap-warnings.md \
+              -c baseline.conf \
+              -r zap-html-report.html
+
+      # 3. Upload artifacts: XML (for future SARIF) + HTML report
+      - name: Upload ZAP reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: |
+            zap/zap-report.xml
+            zap/zap-html-report.html
+          retention-days: 14
+
+      # 4. Clean up
+      - name: Stop container
+        if: always()
+        run: docker stop todo-api || true
+    
