@@ -109,18 +109,20 @@ jobs:
       # 2. Run OWASP ZAP baseline scan (Docker, GHCR image)
       # 2. Run OWASP ZAP baseline scan (public Docker Hub image)
       # 2. Run OWASP ZAP baseline scan (GHCR image)
+      # 2. Run OWASP ZAP baseline scan via official Action
+# 2. Run OWASP ZAP baseline scan (official action)
       - name: ZAP baseline scan
-        run: |
-          docker run --rm --network host \
-            -v ${{ github.workspace }}/zap:/zap/wrk \
-            ghcr.io/zaproxy/zap2docker-stable:latest \
-              zap-baseline.py \
-              -t http://localhost:3000 \
-              -x /zap/wrk/zap-report.xml \
-              -w /zap/wrk/zap-warnings.md \
-              -c /zap/wrk/baseline.conf \
-              -r /zap/wrk/zap-html-report.html
-              
+        uses: zaproxy/action-baseline@v0.11.0          # ← NEW
+        with:
+          target: 'http://localhost:3000'              # API inside the runner
+          rules_file_name: zap/baseline.conf           # ignore low/info
+          cmd_options: >
+            -x zap-report.xml
+            -w zap-warnings.md
+            -r zap-html-report.html                    # reports will land in zap/
+
+
+
 
       # 3. Upload artifacts: XML (for future SARIF) + HTML report
       - name: Upload ZAP reports
