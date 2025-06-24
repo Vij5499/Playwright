@@ -21,7 +21,7 @@ A minimal **Todo** service + **React UI** wired to a **multi-layer test pipeline
 ## 🔧 Quick start (local)
 
 ```bash
-git clone https://github.com/_<github-user>_/_<repo-name>_.git
+git clone https://github.com/Vij5499/Playwright.git
 cd _<repo-name>_
 npm ci                   # install deps
 npm run build:api        # compile src/ → dist/
