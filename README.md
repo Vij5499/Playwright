@@ -22,7 +22,7 @@ A minimal **Todo** service + **React UI** wired to a **multi-layer test pipeline
 
 ```bash
 git clone https://github.com/Vij5499/Playwright.git
-cd _<repo-name>_
+cd Playwright
 npm ci                   # install deps
 npm run build:api        # compile src/ → dist/
 docker build -t todo-api .
